@@ -36,6 +36,16 @@ svg{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);width:210p
 @keyframes flash{0%,91%,100%{opacity:0}92%{opacity:.65}93%{opacity:0}94.5%{opacity:.4}96%{opacity:0}}
 @keyframes drift{from{transform:translateX(-34px)}to{transform:translateX(34px)}}
 .wxc{position:absolute;right:8px;bottom:6px;z-index:2;border:0;background:rgba(255,255,255,.72);border-radius:12px;padding:3px 9px;font:inherit;font-size:11px;color:#444}
+.srow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;font-size:14px;text-align:left}
+.srow small{display:block;font-size:11px;color:var(--mut);margin-top:2px;font-weight:400}
+.tg{border:0;border-radius:14px;padding:7px 14px;font:inherit;font-size:13px;background:var(--bar);color:var(--mut);min-width:64px;flex:none}
+.tg.on{background:var(--fill);color:#fff}
+.seg{display:flex;gap:6px;margin:2px 0 8px}.seg .tg{flex:1;min-width:0}
+#setbox{max-height:88vh;overflow-y:auto;display:block;text-align:left}
+#setbox>*{margin-bottom:12px}
+#setbox .srow input[type=range]{width:130px;accent-color:var(--fill)}
+#setbox select{font:inherit;font-size:14px;padding:6px 10px;border-radius:10px;border:2px solid var(--bar);background:var(--bg);color:var(--ink)}
+#setbox .sh{font-size:13px;font-weight:700;color:var(--ink);margin-top:14px}
 svg#bed{left:70%;bottom:8px;width:190px;pointer-events:none;cursor:default}
 .hand{position:absolute;z-index:3;pointer-events:none;width:46px;height:50px;opacity:0}
 .hand svg{position:static;transform:rotate(165deg);width:100%;height:100%;cursor:default}
@@ -108,7 +118,7 @@ svg.prev{position:static;transform:none;width:150px;height:auto;margin:0 auto;di
 <div class="pick" id="pick"></div>
 <div class="stage" id="stage"><svg class="scene" id="scene" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid slice"></svg><div class="msg" id="msg"></div><div class="badge" id="badge"></div><button class="wxc" id="wx" onclick="wxCycle()"></button>
 <svg id="bed" viewBox="0 0 200 90" style="display:none"></svg><svg id="chr" viewBox="0 0 200 190" onclick="pet(event)"></svg><div class="nightov" id="nightov" hidden>🌙</div></div>
-<div class="wallet"><div class="coin" id="coin"></div><button class="a wide" onclick="shopOpen()">🛍️ 코인샵 · 옷장</button></div>
+<div class="wallet"><div class="coin" id="coin"></div><button class="a wide" onclick="shopOpen()">🛍️ 코인샵 · 옷장</button><button class="a" onclick="setOpen()" style="padding:8px 14px"><b style="font-size:20px">⚙️</b>설정</button></div>
 <div class="stats" id="stats"></div>
 <button class="a wide" id="again" hidden onclick="again()">🥚 새 알 받기</button>
 <div class="btns">
@@ -134,8 +144,30 @@ svg.prev{position:static;transform:none;width:150px;height:auto;margin:0 auto;di
 <div class="smsg" id="smsg"></div>
 <button class="a wide" onclick="shopClose()">닫기</button>
 </div></div>
+<div class="game" id="set" hidden><div class="gbox" id="setbox">
+<div class="coinline" style="margin:0">⚙️ 설정</div>
+<div id="setbody"></div>
+<div class="sh">💾 데이터 백업 · 복원</div>
+<div class="tiny" style="margin:0;text-align:left">펫, 코인, 옷장을 코드로 저장해요. 앱을 다시 설치하거나 폰을 바꿀 때 이 코드를 붙여넣으면 그대로 이어져요.</div>
+<textarea id="bkt" rows="4" spellcheck="false" placeholder="백업 코드를 여기에 붙여넣어요" style="width:100%;box-sizing:border-box;border-radius:12px;border:2px solid var(--bar);background:var(--bg);color:var(--ink);font-size:11px;padding:8px;word-break:break-all;resize:none"></textarea>
+<div class="grid"><button class="a" onclick="bkMake()"><b>🔄</b>새로 만들기</button><button class="a" onclick="bkCopy()"><b>📋</b>복사</button><button class="a" id="bks" onclick="bkShare()"><b>📤</b>공유</button></div>
+<button class="a wide" id="bkr" onclick="bkRestore()">📥 이 코드로 복원하기</button>
+<div class="smsg" id="bkm"></div>
+<div class="sh">기타</div>
+<button class="a wide" onclick="location.reload()">🔄 새로고침 (업데이트 확인)</button>
+<button class="a wide" id="rst" onclick="setReset()">🗑️ 모든 데이터 지우기</button>
+<div class="tiny" id="sver"></div>
+<button class="a wide" onclick="setClose()">닫기</button>
+</div></div>
 <script>
 var KEY="mongi-v2",R,S,G={},LIFE=90;
+var ST={bgm:1,sfx:1,voice:1,call:1,vib:1,quiet:0,bv:100,sv:100,wx:1,loc:"gps",city:"seoul",walk:1,hand:1,theme:"auto"};
+var VOX={pat:1,tickle:1,hi:1,hungry:1,sick:1,want:1,sleepy:1,grumpy:1};
+var CITIES={seoul:{n:"서울",la:37.57,lo:126.98},busan:{n:"부산",la:35.18,lo:129.08},incheon:{n:"인천",la:37.46,lo:126.71},daegu:{n:"대구",la:35.87,lo:128.60},daejeon:{n:"대전",la:36.35,lo:127.38},gwangju:{n:"광주",la:35.16,lo:126.85},ulsan:{n:"울산",la:35.54,lo:129.31},sejong:{n:"세종",la:36.48,lo:127.29},suwon:{n:"수원",la:37.26,lo:127.03},chuncheon:{n:"춘천",la:37.88,lo:127.73},gangneung:{n:"강릉",la:37.75,lo:128.88},jeonju:{n:"전주",la:35.82,lo:127.15},changwon:{n:"창원",la:35.23,lo:128.68},pohang:{n:"포항",la:36.02,lo:129.34},jeju:{n:"제주",la:33.50,lo:126.53}};
+try{var _s=JSON.parse(localStorage.getItem("mongi-set"));if(_s)for(var _k in ST)if(_s[_k]!=null)ST[_k]=_s[_k]}catch(e){}
+function setSave(){try{localStorage.setItem("mongi-set",JSON.stringify(ST))}catch(e){}}
+function applyTheme(){var d=document.documentElement;if(ST.theme=="auto")d.removeAttribute("data-theme");else d.setAttribute("data-theme",ST.theme)}
+applyTheme();
 var STG=["알","아기","어린이","청소년","어른"],SCL=[.8,.62,.78,.9,1];
 var FORM={good:{l:"모범생",i:"✨"},chubby:{l:"뚱보",i:"🍩"},bad:{l:"개구쟁이",i:"😈"},normal:{l:"보통",i:"🎀"}};
 var SPC={
@@ -156,13 +188,14 @@ if(!r.dex)r.dex={};
 Object.keys(r.pets).forEach(function(k){fix(r.pets[k])});R=r;S=R.pets[R.cur];
 if(!R.inv)R.inv={};
 if(R.coins==null){R.coins=100;R.inv.bandana=1;S.eq.neck="bandana";R.gift=true;R.day=dayKey(0);R.streak=1}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(R))}catch(e){}}
+var LOCK=false;
+function save(){if(LOCK)return;try{localStorage.setItem(KEY,JSON.stringify(R))}catch(e){}}
 var cl=function(v){return Math.max(0,Math.min(100,v))};
 function callOk(){return S.call=="hunger"?S.hunger>=25:S.call=="happy"?S.happy>=25:(S.sleeping||!isNight())}
 function updateCall(min){
 if(S.call&&callOk()){if(S.callT<=5&&S.call!="sleep"&&Date.now()-(R.lcr||0)>600000){R.lcr=Date.now();earn(5)}S.call=null;S.callT=0}
 var fresh=false;
-if(!S.call&&!S.sleeping){var nc=S.hunger<25?"hunger":S.happy<25?"happy":isNight()?"sleep":null;if(nc){S.call=nc;S.callT=Math.max(0,min-20);fresh=true;ring();lastCry=Date.now();var cv=nc=="hunger"?"hungry":nc=="happy"?"want":"sleepy";setTimeout(function(){sfx(cv)},350)}}
+if(!S.call&&!S.sleeping){var nc=S.hunger<25?"hunger":S.happy<25?"happy":isNight()?"sleep":null;if(nc){S.call=nc;S.callT=Math.max(0,min-20);fresh=true;ring();lastCry=Date.now();var cv=nc=="hunger"?"hungry":nc=="happy"?"want":"sleepy";setTimeout(function(){alertSfx(cv)},350)}}
 if(S.call&&!fresh)S.callT+=min;
 if(S.call){var n=Math.floor(S.callT/15);if(n>0){S.cm+=Math.min(n,2);S.callT-=n*15;say("투정이 심해요...")}}}
 function step(min){
@@ -173,7 +206,7 @@ S.clean=cl(S.clean-(.6+S.poop*.5)*min);
 S.energy=cl(S.energy+(S.sleeping?4*(S.eq&&S.eq.bed?ITEMS[S.eq.bed].m:1):-.5)*min);
 S.weight=Math.max(20,S.weight-.03*min);
 var p=0;if(S.clean<20)p+=.02;if(S.hunger<10)p+=.02;if(S.weight>90)p+=.02;if(S.poop>=3)p+=.02;
-if(!S.sick&&p&&Math.random()<Math.min(1,p*min)){S.sick=true;sfx("sick");say("으으... 아파요")}
+if(!S.sick&&p&&Math.random()<Math.min(1,p*min)){S.sick=true;alertSfx("sick");say("으으... 아파요")}
 if(S.hunger<=0||S.sick)S.neglect+=min;else S.neglect=Math.max(0,S.neglect-.5*min);
 if(S.neglect>=300){S.dead=true;S.old=false;S.sleeping=false;S.naughty=false;S.call=null;say("하늘나라로 떠났어요...");return}
 if(S.sleeping&&S.energy>=100&&!isNight()){S.sleeping=false;say("잘 잤다! "+cs().s)}
@@ -189,9 +222,9 @@ if(s===4){S.form=formOf(S);var dk=R.cur+":"+S.form;if(!R.dex[dk])bn+=30;R.dex[dk
 else{R.coins+=bn;say((was===0?"부화했어요! 🐣":"쑥쑥 자랐어요! 🎉")+" +"+bn+"🪙");fx(was===0?"🐣":"🎉")}}
 if((n-S.born)/86400000>=LIFE){S.dead=true;S.old=true;S.sleeping=false;S.naughty=false;S.call=null;say("편안히 하늘나라로 떠났어요 🕊️")}
 else{
-if(S.stg>=2&&!S.sleeping&&!S.sick&&!S.naughty&&Math.random()<.004){S.naughty=true;S.nT=n;sfx("grumpy");say(["안 놀면 심술부릴 거야!","간식 줘!","싫어싫어!"][Math.floor(Math.random()*3)])}
+if(S.stg>=2&&!S.sleeping&&!S.sick&&!S.naughty&&Math.random()<.004){S.naughty=true;S.nT=n;alertSfx("grumpy");say(["안 놀면 심술부릴 거야!","간식 줘!","싫어싫어!"][Math.floor(Math.random()*3)])}
 if(S.naughty&&n-S.nT>120000){S.naughty=false;S.disc=cl(S.disc-15);say("제멋대로 굴었어요...")}}}
-var cr=(!S.dead&&S.stg>0&&!S.sleeping)?(S.sick?"sick":S.call=="hunger"?"hungry":S.call=="happy"?"want":S.call=="sleep"?"sleepy":S.naughty?"grumpy":null):null;if(cr&&n-lastCry>22000){lastCry=n;sfx(cr)}
+var cr=(!S.dead&&S.stg>0&&!S.sleeping)?(S.sick?"sick":S.call=="hunger"?"hungry":S.call=="happy"?"want":S.call=="sleep"?"sleepy":S.naughty?"grumpy":null):null;if(cr&&n-lastCry>22000){lastCry=n;alertSfx(cr)}
 save();render()}
 function mood(){if(S.sleeping)return"sleep";if(S.sick)return"sad";var lo=Math.min(S.hunger,S.happy,S.energy,S.clean);
 if(lo<20)return"sad";if((S.hunger+S.happy+S.energy+S.clean)/4>70)return"happy";return"normal"}
@@ -290,24 +323,63 @@ h+='<div class="item"><span class="ie">'+it.e+'</span><span class="in">'+it.n+(i
 document.getElementById("sbody").innerHTML=h}
 function smsg(t){document.getElementById("smsg").textContent=t}
 function shopOpen(){shopDraw();smsg(S.dead||S.stg===0?"알이나 떠난 친구는 아직 입힐 수 없어요":"");document.getElementById("shop").hidden=false}
+function bkMsg(t){document.getElementById("bkm").textContent=t}
+function bkEnc(){save();var b=btoa(unescape(encodeURIComponent(JSON.stringify({v:1,t:Date.now(),d:R})))),c=0,i;for(i=0;i<b.length;i++)c=(c*31+b.charCodeAt(i))%65521;return"PET1-"+c.toString(36)+"."+b}
+function bkDec(x){x=(x||"").replace(/\s+/g,"");var m=x.match(/^PET1-([0-9a-z]+)\.([A-Za-z0-9+\/=]+)$/);if(!m)return null;var c=0,i;for(i=0;i<m[2].length;i++)c=(c*31+m[2].charCodeAt(i))%65521;if(c.toString(36)!==m[1])return null;try{var o=JSON.parse(decodeURIComponent(escape(atob(m[2]))));var d=o&&o.d;if(!d||typeof d!=="object"||!d.pets||!SPC[d.cur]||!d.pets[d.cur]||typeof d.pets[d.cur].born!=="number")return null;return d}catch(e){return null}}
+var bkArm=false,bkTm=0;
+function bkReset(){bkArm=false;clearTimeout(bkTm);document.getElementById("bkr").textContent="📥 이 코드로 복원하기"}
+function sTg(k,label,hint){return'<div class="srow"><span>'+label+(hint?'<small>'+hint+'</small>':'')+'</span><button class="tg'+(ST[k]?' on':'')+'" onclick="setTg(\''+k+'\')">'+(ST[k]?'켜짐':'꺼짐')+'</button></div>'}
+function sSeg(k,o){return'<div class="seg">'+o.map(function(x){return'<button class="tg'+(ST[k]==x[0]?' on':'')+'" onclick="setSet(\''+k+'\',\''+x[0]+'\')">'+x[1]+'</button>'}).join('')+'</div>'}
+function sSld(k,label){return'<div class="srow"><span>'+label+'</span><input type="range" min="0" max="100" step="5" value="'+ST[k]+'" oninput="setVol(\''+k+'\',this.value)" onchange="setPrev(\''+k+'\')"></div>'}
+function gpsStatus(){var e=document.getElementById("gpsst");if(e)e.textContent=WXFIX?"✅ 현재 위치를 확인했어요":WXGPS?"⚠️ 새 위치를 못 잡아서 마지막 위치를 써요. 폰 설정에서 이 앱의 위치 권한을 확인해 주세요":WXOK?"⚠️ 위치를 못 잡아서 서울 기준이에요. 폰 설정에서 이 앱의 위치 권한을 확인해 주세요":"위치를 확인하는 중..."}
+function setDraw(){var h='<div class="sh">🔊 소리</div><div class="srow"><span>전체 무음<small>모든 소리를 한 번에 끄기</small></span><button class="tg'+(muted?' on':'')+'" onclick="toggleBgm();setDraw()">'+(muted?'무음':'해제')+'</button></div>'+
+sTg("bgm","🎵 배경음악")+sSld("bv","배경음악 크기")+sTg("sfx","🔔 효과음","버튼·먹기·게임 소리")+sTg("voice","🐾 펫 소리","쓰다듬기·인사 소리")+sSld("sv","효과음·펫 소리 크기")+
+'<div class="sh">📢 호출 알림</div>'+sTg("call","호출 알림 받기","배고파요·놀아줘요·졸려요·아파요 알림음과 울음소리")+sTg("vib","📳 진동","폰이 진동으로 알려요")+sTg("quiet","🌙 밤(22~7시) 방해금지","밤에는 알림을 울리지 않아요")+'<div class="tiny" style="text-align:left">알림은 앱이 열려 있을 때만 울려요. 앱을 닫으면 폰 알림은 가지 않아요.</div>'+
+'<div class="sh">🌤️ 날씨 · 위치</div>'+sTg("wx","날씨 배경 사용","현재 날씨를 배경에 반영해요");
+if(ST.wx){h+='<div class="srow"><span>위치 방식</span></div>'+sSeg("loc",[["gps","📍 GPS 자동"],["city","🏙️ 도시 선택"]]);
+if(ST.loc=="city")h+='<div class="srow"><span>도시</span><select onchange="setSet(\'city\',this.value)">'+Object.keys(CITIES).map(function(k){return'<option value="'+k+'"'+(ST.city==k?' selected':'')+'>'+CITIES[k].n+'</option>'}).join('')+'</select></div>';
+else h+='<div class="tiny" id="gpsst" style="text-align:left"></div>';
+h+='<button class="a wide" onclick="wxFetch();gpsStatus()">🔄 지금 날씨 다시 확인</button>'}
+h+='<div class="sh">🎮 화면</div>'+sTg("walk","🚶 펫이 돌아다니기")+sTg("hand","🖐️ 쓰다듬는 손 효과")+'<div class="srow"><span>화면 모드</span></div>'+sSeg("theme",[["auto","자동"],["light","밝게"],["dark","어둡게"]]);
+document.getElementById("setbody").innerHTML=h;gpsStatus()}
+function setTg(k){ST[k]=ST[k]?0:1;setSave();
+if(k=="bgm"){if(ST.bgm){if(!muted)startBgm()}else stopBgm()}
+if(k=="wx"){lastScene="";if(ST.wx)wxFetch()}
+if(k=="walk"&&!ST.walk){px=.5;pz=0;dirX=1;walkTo(.6)}
+if(ST[k]){if(k=="sfx")sfx("ok");if(k=="voice")sfx("hi");if(k=="call"){ring();alertSfx("want")}if(k=="vib"&&navigator.vibrate)navigator.vibrate(120)}
+setDraw();render()}
+function setSet(k,v){ST[k]=v;setSave();if(k=="theme")applyTheme();if(k=="loc"||k=="city"){lastScene="";wxFetch()}setDraw();render()}
+function setVol(k,v){ST[k]=+v;setSave();applyVol()}
+function setPrev(k){if(k=="sv")sfx("ok")}
+var rstArm=false,rstTm=0;
+function rstReset(){rstArm=false;clearTimeout(rstTm);var b=document.getElementById("rst");if(b)b.textContent="🗑️ 모든 데이터 지우기"}
+function setReset(){if(!rstArm){rstArm=true;document.getElementById("rst").textContent="⚠️ 정말 지울까요? 한 번 더 누르면 모두 삭제돼요";bkMsg("먼저 백업 코드를 복사해 두면 나중에 되돌릴 수 있어요");clearTimeout(rstTm);rstTm=setTimeout(rstReset,6000);return}LOCK=true;try{localStorage.removeItem(KEY);localStorage.removeItem("mongi-v1")}catch(e){}location.reload()}
+function setOpen(){setDraw();bkReset();rstReset();document.getElementById("bkt").value=bkEnc();bkMsg("");document.getElementById("bks").style.display=navigator.share?"":"none";document.getElementById("sver").textContent="내 펫 키우기 · 버전 "+VER;document.getElementById("set").hidden=false}
+function setClose(){bkReset();rstReset();document.getElementById("set").hidden=true}
+function bkMake(){bkReset();document.getElementById("bkt").value=bkEnc();bkMsg("새 코드를 만들었어요")}
+function bkCopy(){bkReset();var t=document.getElementById("bkt");t.value=bkEnc();var fb=function(){t.focus();t.select();t.setSelectionRange(0,t.value.length);var ok=false;try{ok=document.execCommand("copy")}catch(e){}bkMsg(ok?"복사했어요 ✅ 안전한 곳에 붙여넣어 두세요":"글자를 길게 눌러 '복사'를 선택해 주세요")};if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t.value).then(function(){bkMsg("복사했어요 ✅ 안전한 곳에 붙여넣어 두세요")},fb)}else fb()}
+function bkShare(){var v=bkEnc();document.getElementById("bkt").value=v;if(navigator.share)navigator.share({title:"내 펫 백업 코드",text:v}).catch(function(){});else bkMsg("공유가 안 돼요. 복사를 써 주세요")}
+function bkRestore(){var d=bkDec(document.getElementById("bkt").value);if(!d){bkReset();return bkMsg("코드가 올바르지 않아요. 전체를 빠짐없이 붙여넣었는지 확인해 주세요")}
+if(!bkArm){bkArm=true;document.getElementById("bkr").textContent="⚠️ 한 번 더 누르면 복원돼요";bkMsg("지금 키우는 펫은 이 코드의 펫으로 바뀌어요");clearTimeout(bkTm);bkTm=setTimeout(bkReset,6000);return}
+LOCK=true;try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){LOCK=false;return bkMsg("저장에 실패했어요")}bkMsg("복원 중...");setTimeout(function(){location.reload()},300)}
 function shopClose(){document.getElementById("shop").hidden=true}
 function buy(k){var it=ITEMS[k];if(R.inv[k])return;if(R.coins<it.p){shopDraw();sfx("no");return smsg("코인이 모자라요 🪙 게임과 돌보기로 모아 보세요")}
 R.coins-=it.p;R.inv[k]=1;S.eq[it.slot]=k;sfx("buy");save();render();shopDraw();smsg(it.n+" 구매 완료! "+(it.slot=="bed"?"방에 놓았어요":"바로 입혀 줬어요"))}
 function equip(k){var s=ITEMS[k].slot;S.eq[s]=S.eq[s]===k?null:k;sfx("equip");save();render();shopDraw()}
 var lastScene="";
-var WXS="clear",WXT=null,WXOK=false,WXGPS=false,WXLAST=0,wxDemo=-1,WXLIST=["clear","cloud","fog","rain","snow","storm"],WXN={clear:"맑음",cloud:"흐림",fog:"안개",rain:"비",snow:"눈",storm:"천둥번개"},WXE={clear:"☀️",cloud:"☁️",fog:"🌫️",rain:"🌧️",snow:"❄️",storm:"⛈️"};
+var WXS="clear",WXT=null,WXOK=false,WXGPS=false,WXFIX=false,WXLAST=0,wxDemo=-1,WXLIST=["clear","cloud","fog","rain","snow","storm"],WXN={clear:"맑음",cloud:"흐림",fog:"안개",rain:"비",snow:"눈",storm:"천둥번개"},WXE={clear:"☀️",cloud:"☁️",fog:"🌫️",rain:"🌧️",snow:"❄️",storm:"⛈️"};
 try{var wc0=JSON.parse(localStorage.getItem("mongi-wx"));if(wc0&&Date.now()-wc0.t<108e5&&WXN[wc0.w]){WXS=wc0.w;WXT=wc0.tp;WXOK=true}}catch(e){}
-function wxe(){return wxDemo>=0?WXLIST[wxDemo]:WXS}
+function wxe(){return!ST.wx?"clear":wxDemo>=0?WXLIST[wxDemo]:WXS}
 function wxMap(c){return c<=1?"clear":c<=3?"cloud":c<=48?"fog":c<=67?"rain":c<=77?"snow":c<=82?"rain":c<=86?"snow":"storm"}
 function mixc(a,b,t){var A=parseInt(a.slice(1),16),B=parseInt(b.slice(1),16),r=0,i,sh=[16,8,0];for(i=0;i<3;i++){var x=(A>>sh[i])&255,y=(B>>sh[i])&255;r|=Math.round(x+(y-x)*t)<<sh[i]}return"#"+("000000"+r.toString(16)).slice(-6)}
 function wxSky(sk,W){var m=({clear:0,cloud:.45,fog:.55,rain:.65,snow:.5,storm:.8})[W],g=({cloud:"#8d99a6",fog:"#b8c0c8",rain:"#76828e",snow:"#b4c0cf",storm:"#454d59"})[W];if(!m)return sk;return sk.map(function(c){return mixc(c,g,m)})}
-function wxLabel(){var W=wxe();if(!WXOK&&wxDemo<0)return"🌤️ 날씨 확인 중";var n=phase()=="night"&&W=="clear"?"🌙":WXE[W];return (WXGPS&&wxDemo<0?"📍":"")+n+" "+WXN[W]+(wxDemo<0&&WXT!=null?" · "+WXT+"°":"")+(wxDemo>=0?" (미리보기)":"")}
+function wxLabel(){var W=wxe();if(!WXOK&&wxDemo<0)return"🌤️ 날씨 확인 중";var n=phase()=="night"&&W=="clear"?"🌙":WXE[W];return (wxDemo<0&&ST.loc=="city"?(CITIES[ST.city]||CITIES.seoul).n+" ":WXGPS&&wxDemo<0?"📍":"")+n+" "+WXN[W]+(wxDemo<0&&WXT!=null?" · "+WXT+"°":"")+(wxDemo>=0?" (미리보기)":"")}
 function wxCycle(){wxDemo=wxDemo>=WXLIST.length-1?-1:wxDemo+1;lastScene="";render()}
-function wxPos(cb){var last=null;try{last=JSON.parse(localStorage.getItem("mongi-loc"))}catch(e){}
-var done=false,fin=function(la,lo,gps){if(done)return;done=true;WXGPS=gps;if(gps&&arguments[3]){try{localStorage.setItem("mongi-loc",JSON.stringify({la:la,lo:lo,t:Date.now()}))}catch(e){}}cb(la,lo)};
+function wxPos(cb){if(ST.loc=="city"){var cc=CITIES[ST.city]||CITIES.seoul;WXGPS=false;WXFIX=false;return cb(cc.la,cc.lo)}var last=null;try{last=JSON.parse(localStorage.getItem("mongi-loc"))}catch(e){}
+var done=false,fin=function(la,lo,gps){if(done)return;done=true;WXGPS=gps;WXFIX=!!arguments[3];if(gps&&arguments[3]){try{localStorage.setItem("mongi-loc",JSON.stringify({la:la,lo:lo,t:Date.now()}))}catch(e){}}cb(la,lo)};
 var fb=function(){if(last)fin(last.la,last.lo,true);else fin(37.57,126.98,false)};
 if(navigator.geolocation){try{navigator.geolocation.getCurrentPosition(function(p){fin(p.coords.latitude,p.coords.longitude,true,true)},fb,{timeout:8000,maximumAge:600000})}catch(e){fb()}setTimeout(fb,9500)}else fb()}
-function wxFetch(){wxPos(function(la,lo){try{fetch("https://api.open-meteo.com/v1/forecast?latitude="+la.toFixed(2)+"&longitude="+lo.toFixed(2)+"&current=weather_code,temperature_2m").then(function(r){return r.json()}).then(function(j){var c=j.current;if(!c)return;WXS=wxMap(c.weather_code);WXT=Math.round(c.temperature_2m);WXOK=true;WXLAST=Date.now();try{localStorage.setItem("mongi-wx",JSON.stringify({w:WXS,tp:WXT,t:Date.now()}))}catch(e){}lastScene="";render()}).catch(function(){})}catch(e){}})}
+function wxFetch(){if(!ST.wx)return;wxPos(function(la,lo){try{fetch("https://api.open-meteo.com/v1/forecast?latitude="+la.toFixed(2)+"&longitude="+lo.toFixed(2)+"&current=weather_code,temperature_2m").then(function(r){return r.json()}).then(function(j){var c=j.current;if(!c)return;WXS=wxMap(c.weather_code);WXT=Math.round(c.temperature_2m);WXOK=true;WXLAST=Date.now();try{localStorage.setItem("mongi-wx",JSON.stringify({w:WXS,tp:WXT,t:Date.now()}))}catch(e){}lastScene="";render();gpsStatus()}).catch(function(){gpsStatus()})}catch(e){}})}
 function phase(){var d=new Date(),h=d.getHours()+d.getMinutes()/60;return h>=7&&h<17?"day":h>=5&&h<7?"dawn":h>=17&&h<19?"sunset":h>=19&&h<22?"evening":"night"}
 var SKY={day:["#7fcdf5","#d6f1ff"],dawn:["#ffa79a","#ffe6bf"],sunset:["#ff8a5c","#ffd699"],evening:["#3b3f86","#b8739c"],night:["#0f1a3d","#2a3a6b"]};
 var TINT={day:"",dawn:"rgba(255,170,150,.12)",sunset:"rgba(255,120,60,.14)",evening:"rgba(40,20,90,.28)",night:"rgba(8,16,60,.45)"};
@@ -395,7 +467,7 @@ var bars=[[c.f+" 배고픔",S.hunger],["💛 행복",S.happy],["⚡ 에너지",S
 document.getElementById("stats").innerHTML=bars.map(function(b){return'<div class="row"><span>'+b[0]+'</span><div class="bar"><i style="width:'+b[1]+'%"></i></div></div>'}).join("")+'<div class="row"><span>📋 케어미스</span><span>'+S.cm+'회</span></div>';
 var days=Math.floor((Date.now()-S.born)/86400000)+1;
 document.getElementById("age").textContent=S.dead?(S.old?"천수를 누렸어요 🕊️":"하늘나라 🕊️"):S.stg===0?"알":[STG[S.stg]+(S.stg===4&&S.form?"("+FORM[S.form].l+")":""),days+"일째",Math.round(S.weight)+"g",S.gen>1?S.gen+"세대":""].filter(Boolean).join(" · ");
-document.getElementById("coin").textContent="🪙 "+R.coins;document.getElementById("wx").textContent=wxLabel();
+document.getElementById("coin").textContent="🪙 "+R.coins;document.getElementById("wx").textContent=wxLabel();document.getElementById("wx").hidden=!ST.wx;document.getElementById("snd").textContent=muted?"🔇":"🔊";
 document.getElementById("fbtn").innerHTML='<b>'+c.f+'</b>밥주기';
 document.getElementById("pbtn").innerHTML='<b>'+c.p+'</b>놀기';
 document.getElementById("sbtn").innerHTML=S.sleeping?'<b>☀️</b>불 켜기':'<b>🌙</b>불 끄기';
@@ -433,14 +505,14 @@ hamster:{pat:["찍찍! 볼이 간질간질 🐹","눈이 반짝반짝~","더 쓰
 var animCls="",animUntil=0;
 var BEDX=.786,px=.5,pz=0,dirX=1,mvUntil=0,holdUntil=0,lastCry=0,SPD={dog:1,cat:.7,rabbit:1.25,hamster:1.5};
 function walkTo(dur){var d=document.getElementById("chr");d.style.transition="left "+dur+"s linear,bottom "+dur+"s linear,width "+dur+"s linear";mvUntil=Date.now()+dur*1000;render();setTimeout(render,dur*1000+80)}
-function wander(){if(document.hidden||S.dead||S.stg===0||S.sleeping||S.sick||Date.now()<holdUntil||Math.random()<.3)return;
+function wander(){if(!ST.walk||document.hidden||S.dead||S.stg===0||S.sleeping||S.sick||Date.now()<holdUntil||Math.random()<.3)return;
 var nx=.03+Math.random()*.94;if(Math.abs(nx-px)<.2)nx=px<.5?px+.3:px-.3;nx=Math.min(1,Math.max(0,nx));
 var nz=Math.random()<.6?Math.random()*.4:.4+Math.random()*.6,dist=Math.abs(nx-px)+Math.abs(nz-pz)*.6,dur=(.8+dist*4)/(SPD[R.cur]||1);
 dirX=nx>px?1:-1;px=nx;pz=nz;walkTo(dur);
 if(Math.random()<.15&&mood()!="sad"){sfx("hi");say(cs().s)}}
 function comeFront(){if(S.sleeping||S.dead||S.stg===0)return;holdUntil=Date.now()+6000;var nx=.5+(Math.random()-.5)*.24;if(Math.abs(nx-px)<.04&&pz<.05)return;dirX=nx>px?1:-1;px=nx;pz=0;walkTo(.7)}
 var HANDSVG='<svg viewBox="0 0 48 52"><g fill="#fff3e0" stroke="#d9b99b" stroke-width="1.6" stroke-linejoin="round"><rect x="3" y="26" width="8" height="17" rx="4" transform="rotate(-28 7 34)"/><rect x="11" y="7" width="8" height="26" rx="4"/><rect x="19" y="2" width="8" height="30" rx="4"/><rect x="27" y="4" width="8" height="28" rx="4"/><rect x="35" y="10" width="7" height="23" rx="3.5"/><rect x="9" y="24" width="32" height="24" rx="11"/></g><circle cx="25" cy="38" r="5" fill="#ffc9d6"/><circle cx="16" cy="32" r="1.8" fill="#ffc9d6"/><circle cx="25" cy="30" r="1.8" fill="#ffc9d6"/><circle cx="34" cy="32" r="1.8" fill="#ffc9d6"/></svg>';
-function handFx(e,belly){var st=document.getElementById("stage"),r=st.getBoundingClientRect(),c=document.getElementById("chr").getBoundingClientRect(),x=(e&&e.clientX!=null?e.clientX:c.left+c.width/2)-r.left,y=(e&&e.clientY!=null?e.clientY:c.top+c.height*.3)-r.top,h=document.createElement("div");h.className="hand "+(belly?"t":"p");h.style.left=x+"px";h.style.top=y+"px";h.innerHTML=HANDSVG;st.appendChild(h);setTimeout(function(){h.remove()},1050)}
+function handFx(e,belly){if(!ST.hand)return;var st=document.getElementById("stage"),r=st.getBoundingClientRect(),c=document.getElementById("chr").getBoundingClientRect(),x=(e&&e.clientX!=null?e.clientX:c.left+c.width/2)-r.left,y=(e&&e.clientY!=null?e.clientY:c.top+c.height*.3)-r.top,h=document.createElement("div");h.className="hand "+(belly?"t":"p");h.style.left=x+"px";h.style.top=y+"px";h.innerHTML=HANDSVG;st.appendChild(h);setTimeout(function(){h.remove()},1050)}
 var STM={sick:"아파서 힘이 없어요...",hungry:"배고파요... 밥 주세요"};
 function anim(c,ms){animCls=c;animUntil=Date.now()+ms;var d=document.getElementById("chr");d.classList.add(c);setTimeout(function(){d.classList.remove(c)},ms)}
 function pet(e){if(S.dead)return;
@@ -494,7 +566,7 @@ load();
 var ni=document.getElementById("name");ni.value=S.name;ni.onchange=function(){S.name=ni.value.trim()||cs().n;ni.value=S.name;save();render()};
 var pk=document.getElementById("pick");
 Object.keys(SPC).forEach(function(k){var b=document.createElement("button");b.className="chip";b.dataset.k=k;b.innerHTML="<b>"+SPC[k].e+"</b>"+SPC[k].l;b.onclick=function(){choose(k)};pk.appendChild(b)});
-var VER="1.2.0";
+var VER="1.3.0";
 document.getElementById("ver").textContent="버전 "+VER;
 setTimeout(function(){var e=document.getElementById("splash");e.classList.add("out");setTimeout(function(){e.remove()},600)},3000);
 tick();setInterval(tick,2000);setInterval(wander,4500);wxFetch();setInterval(wxFetch,1800000);document.addEventListener("visibilitychange",function(){if(!document.hidden&&Date.now()-WXLAST>600000)wxFetch()});
@@ -544,12 +616,15 @@ if(ph==3&&Z.dr>=0&&k%2==1)hat(nt,.1,9000)}
 note(Z.bs[c]+(k%4==2?12:0),nt,Z.t*.85,"triangle",Z.bv||.7);
 if(k%2==1)note(Z.ch[c][(k>>1)%3]+12,nt,Z.t*.6,"sine",ph==2?.3:(Z.cv||.18));
 nt+=Z.t;sp=(sp+1)%N}}
-function ensureAC(){try{if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)();mg=AC.createGain();mg.gain.value=.12;mg.connect(AC.destination);sg=AC.createGain();sg.gain.value=.5;sg.connect(AC.destination)}if(AC.state==="suspended")AC.resume()}catch(e){}}
-function startBgm(){ensureAC();try{if(AC&&!on){on=true;nt=AC.currentTime+.1;tm=setInterval(sched,100)}}catch(e){}
-document.getElementById("snd").textContent=on?"🔊":"🔇"}
-function stopBgm(){on=false;clearInterval(tm);document.getElementById("snd").textContent="🔇"}
-function toggleBgm(){if(on){muted=true;stopBgm()}else{muted=false;startBgm()}try{localStorage.setItem("mongi-bgm",muted?"off":"on")}catch(e){}}
-function ring(){try{if(muted)return;if(AC&&AC.state==="running"){var t=AC.currentTime;note(88,t,.1,"square",.5);note(88,t+.18,.1,"square",.5)}if(navigator.vibrate)navigator.vibrate([120,80,120])}catch(e){}}
+function applyVol(){if(mg)mg.gain.value=.12*ST.bv/100;if(sg)sg.gain.value=.5*ST.sv/100}
+function updSnd(){var e=document.getElementById("snd");if(e)e.textContent=muted?"🔇":"🔊"}
+function ensureAC(){try{if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)();mg=AC.createGain();mg.connect(AC.destination);sg=AC.createGain();sg.connect(AC.destination);applyVol()}if(AC.state==="suspended")AC.resume()}catch(e){}}
+function startBgm(){ensureAC();try{if(AC&&!on&&ST.bgm){on=true;nt=AC.currentTime+.1;tm=setInterval(sched,100)}}catch(e){}
+updSnd()}
+function stopBgm(){on=false;clearInterval(tm);updSnd()}
+function toggleBgm(){muted=!muted;if(muted)stopBgm();else startBgm();updSnd();try{localStorage.setItem("mongi-bgm",muted?"off":"on")}catch(e){}}
+function ring(){if(!ST.call||(ST.quiet&&isNight()))return;try{if(!muted&&AC&&AC.state==="running"){var t=AC.currentTime;tn(1318,1318,t,.1,"square",.25);tn(1318,1318,t+.18,.1,"square",.25)}if(ST.vib&&navigator.vibrate)navigator.vibrate([120,80,120])}catch(e){}}
+function alertSfx(n){if(!ST.call||(ST.quiet&&isNight()))return;sfx(n,true)}
 function tn(f1,f2,t,d,ty,v){var o=AC.createOscillator(),g=AC.createGain();o.type=ty||"sine";o.frequency.setValueAtTime(f1,t);if(f2&&f2!==f1)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v||.4,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(sg);o.start(t);o.stop(t+d+.03)}
 function ns(t,d,fq,v){if(!NB){NB=AC.createBuffer(1,AC.sampleRate*.1,AC.sampleRate);var b=NB.getChannelData(0);for(var i=0;i<b.length;i++)b[i]=Math.random()*2-1}var s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain();s.buffer=NB;f.type="bandpass";f.frequency.value=fq;f.Q.value=1.2;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(f);f.connect(g);g.connect(sg);s.start(t)}
 function vr(n){return Math.floor(Math.random()*n)}
@@ -601,7 +676,7 @@ want:[function(t){for(var i=0;i<8;i++)ns(t+i*.05,.03,2000,.2);vch(t+.45,2200,3,.
 sleepy:[function(t){tn(2000,1100,t,.5,"sine",.25)}],
 grumpy:[function(t){for(var i=0;i<6;i++)ns(t+i*.06,.04,4500,.25)}]}};
 function voice(kind,t){var a=(VO[R.cur]||VO.dog)[kind]||(VO[R.cur]||VO.dog).pat;a[vr(a.length)](t)}
-function sfx(n){try{if(muted||!AC||AC.state!=="running")return;var t=AC.currentTime+(n=="tap"?0:.06),i;
+function sfx(n,force){try{if(muted||!AC||AC.state!=="running")return;if(VOX[n]){if(!ST.voice&&!force)return}else if(!ST.sfx)return;var t=AC.currentTime+(n=="tap"?0:.06),i;
 switch(n){
 case"tap":tn(720,1050,t,.07,"sine",.4);break;
 case"eat":tn(900,500,t,.07);tn(850,470,t+.1,.07);tn(800,440,t+.2,.09);break;
