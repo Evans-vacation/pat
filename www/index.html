@@ -402,22 +402,27 @@ var AC,mg,sg,nt=0,sp=0,tm=0,on=false,muted=false;
 try{muted=localStorage.getItem("mongi-bgm")==="off"}catch(e){}
 var NB;
 var SONG={
-dog:{t:.19,w:"square",lv:.2,dr:1,bs:[48,45,41,43],ch:[[60,64,67],[57,60,64],[53,57,60],[55,59,62]],ml:[[79,0,79,81,79,76,72,76],[81,0,81,84,81,79,76,79],[77,0,81,77,72,77,81,0],[74,0,79,83,79,74,71,74]]},
-cat:{t:.27,w:"triangle",lv:.45,dr:0,bs:[38,43,36,45],ch:[[62,65,69],[59,62,67],[64,67,71],[60,64,67]],ml:[[74,0,77,0,76,74,0,69],[71,0,74,0,72,71,0,67],[72,0,76,0,79,0,76,0],[69,0,72,76,0,72,0,0]]},
-rabbit:{t:.17,w:"square",lv:.16,dr:1,bs:[43,50,40,48],ch:[[67,71,74],[62,66,69],[64,67,71],[60,64,67]],ml:[[74,0,71,0,74,0,71,67],[73,0,69,0,73,0,69,66],[71,0,67,0,71,0,67,64],[72,0,67,0,72,76,72,0]]},
-hamster:{t:.14,w:"square",lv:.15,dr:2,bs:[48,43,45,41],ch:[[60,64,67],[55,59,62],[57,60,64],[53,57,60]],ml:[[72,74,76,77,79,77,76,74],[71,74,77,74,71,74,77,74],[69,72,76,72,69,72,76,81],[72,77,81,77,72,77,81,84]]}};
+dog:{t:.1875,bars:20,w:"square",lv:.2,dr:1,bs:[48,45,41,43],ch:[[60,64,67],[57,60,64],[53,57,60],[55,59,62]],ml:[[79,0,79,81,79,76,72,76],[81,0,81,84,81,79,76,79],[77,0,81,77,72,77,81,0],[74,0,79,83,79,74,71,74]]},
+cat:{t:.234375,bars:16,w:"triangle",lv:.45,dr:0,bs:[38,43,36,45],ch:[[62,65,69],[59,62,67],[64,67,71],[60,64,67]],ml:[[74,0,77,0,76,74,0,69],[71,0,74,0,72,71,0,67],[72,0,76,0,79,0,76,0],[69,0,72,76,0,72,0,0]]},
+rabbit:{t:.15625,bars:24,w:"square",lv:.16,dr:1,bs:[43,50,40,48],ch:[[67,71,74],[62,66,69],[64,67,71],[60,64,67]],ml:[[74,0,71,0,74,0,71,67],[73,0,69,0,73,0,69,66],[71,0,67,0,71,0,67,64],[72,0,67,0,72,76,72,0]]},
+hamster:{t:.13392857,bars:28,w:"square",lv:.15,dr:2,bs:[48,43,45,41],ch:[[60,64,67],[55,59,62],[57,60,64],[53,57,60]],ml:[[72,74,76,77,79,77,76,74],[71,74,77,74,71,74,77,74],[69,72,76,72,69,72,76,81],[72,77,81,77,72,77,81,84]]}};
 function kick(t){var o=AC.createOscillator(),g=AC.createGain();o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(40,t+.12);g.gain.setValueAtTime(.9,t);g.gain.exponentialRampToValueAtTime(.001,t+.15);o.connect(g);g.connect(mg);o.start(t);o.stop(t+.2)}
 function hat(t,v,fq){if(!NB){NB=AC.createBuffer(1,AC.sampleRate*.1,AC.sampleRate);var d=NB.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=Math.random()*2-1}var s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain();s.buffer=NB;f.type="highpass";f.frequency.value=fq;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+.06);s.connect(f);f.connect(g);g.connect(mg);s.start(t)}
 function hz(n){return 440*Math.pow(2,(n-69)/12)}
 function note(n,t,d,type,v){var o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=hz(n);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(mg);o.start(t);o.stop(t+d+.05)}
-function sched(){var Z=SONG[R.cur]||SONG.dog;while(nt<AC.currentTime+.4){var c=Math.floor(sp/8)%4,k=sp%8,m=Z.ml[c][k];
-if(m)note(m,nt,Z.t*.95,Z.w,Z.lv);
+function sched(){var Z=SONG[R.cur]||SONG.dog,N=Z.bars*8;while(nt<AC.currentTime+.4){var b=Math.floor(sp/8),c=b%4,k=sp%8,ph=Math.floor(b/4)%4,m=Z.ml[c][k];
+if(ph==0){if(m)note(m,nt,Z.t*.95,Z.w,Z.lv)}
+else if(ph==1){note(Z.ch[c][k%3]+24,nt,Z.t*.9,Z.w,Z.lv*.7)}
+else if(ph==3){if(m){note(m,nt,Z.t*.95,Z.w,Z.lv);note(m-12,nt,Z.t*.95,"triangle",Z.lv*.8)}}
+if(ph==2){if(k%4==2)hat(nt,.12,6000)}
+else{
 if(Z.dr==2){if(k%2==0)kick(nt);if(k==4)hat(nt,.5,1800);hat(nt,.14,7000)}
 else if(Z.dr==1){if(k%4==0)kick(nt);if(k==4)hat(nt,.6,1800);hat(nt,.18,7000)}
 else if(k%4==2)hat(nt,.12,6000);
+if(ph==3&&k%2==1)hat(nt,.1,9000)}
 note(Z.bs[c]+(k%4==2?12:0),nt,Z.t*.85,"triangle",.7);
-if(k%2==1)note(Z.ch[c][(k>>1)%3]+12,nt,Z.t*.6,"sine",.18);
-nt+=Z.t;sp=(sp+1)%32}}
+if(k%2==1)note(Z.ch[c][(k>>1)%3]+12,nt,Z.t*.6,"sine",ph==2?.3:.18);
+nt+=Z.t;sp=(sp+1)%N}}
 function ensureAC(){try{if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)();mg=AC.createGain();mg.gain.value=.12;mg.connect(AC.destination);sg=AC.createGain();sg.gain.value=.5;sg.connect(AC.destination)}if(AC.state==="suspended")AC.resume()}catch(e){}}
 function startBgm(){ensureAC();try{if(AC&&!on){on=true;nt=AC.currentTime+.1;tm=setInterval(sched,100)}}catch(e){}
 document.getElementById("snd").textContent=on?"🔊":"🔇"}
