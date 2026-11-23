@@ -2,5 +2,8 @@
   "appId": "com.evans.pat",
   "appName": "몽이 키우기",
   "webDir": "www",
-  "backgroundColor": "#ffe8f0"
+  "backgroundColor": "#ffe8f0",
+  "server": {
+    "url": "https://evans-vacation.github.io/pat/www/"
+  }
 }
