@@ -135,7 +135,7 @@ svg.prev{position:static;transform:none;width:150px;height:auto;margin:0 auto;di
 <button class="a wide" onclick="shopClose()">닫기</button>
 </div></div>
 <script>
-var KEY="mongi-v2",R,S,G={},LIFE=10;
+var KEY="mongi-v2",R,S,G={},LIFE=90;
 var STG=["알","아기","어린이","청소년","어른"],SCL=[.8,.62,.78,.9,1];
 var FORM={good:{l:"모범생",i:"✨"},chubby:{l:"뚱보",i:"🍩"},bad:{l:"개구쟁이",i:"😈"},normal:{l:"보통",i:"🎀"}};
 var SPC={
@@ -145,8 +145,8 @@ rabbit:{n:"토순이",e:"🐰",l:"토끼",f:"🥕",p:"🌼",s:"깡충!"},
 hamster:{n:"햄톨",e:"🐹",l:"햄스터",f:"🌻",p:"🎡",s:"찍찍!"}};
 function cs(){return SPC[R.cur]}
 function isNight(){var h=new Date().getHours();return h>=22||h<7}
-function stageOf(p){var a=(Date.now()-p.born)/60000;return a<.5?0:a<180?1:a<1440?2:a<4320?3:4}
-function formOf(p){if(p.weight>=75)return"chubby";if(p.disc>=70&&p.cm<=2)return"good";if(p.disc<35||p.cm>=6)return"bad";return"normal"}
+function stageOf(p){var a=(Date.now()-p.born)/60000;return a<.5?0:a<4320?1:a<14400?2:a<34560?3:4}
+function formOf(p){if(p.weight>=75)return"chubby";if(p.disc>=70&&p.cm<=10)return"good";if(p.disc<35||p.cm>=20)return"bad";return"normal"}
 function mk(k){return{name:SPC[k].n,hunger:80,happy:80,energy:80,clean:80,born:Date.now(),last:Date.now(),sleeping:false,poop:0,weight:50,sick:false,disc:50,naughty:false,nT:0,neglect:0,dead:false,stg:0,old:false,cm:0,call:null,callT:0,form:null,gen:1,eq:{}}}
 function fix(p){var d={weight:50,sick:false,disc:50,naughty:false,nT:0,neglect:0,dead:false,old:false,cm:0,call:null,callT:0,form:null,gen:1};for(var k in d)if(p[k]==null)p[k]=d[k];if(!p.eq)p.eq={};if(p.stg==null)p.stg=stageOf(p);if(p.stg===4&&!p.form)p.form=formOf(p)}
 function load(){var r=null;try{r=JSON.parse(localStorage.getItem(KEY))}catch(e){}
@@ -184,7 +184,7 @@ S.last=n;
 if(!S.dead&&S.stg>0)step(m);
 if(!S.dead){
 var s=stageOf(S);
-if(s!==S.stg){var was=S.stg,bn=({1:10,2:20,3:30,4:50})[s]||0;S.stg=s;sfx("level");
+if(s<S.stg)S.stg=s;else if(s!==S.stg){var was=S.stg,bn=({1:10,2:20,3:30,4:50})[s]||0;S.stg=s;sfx("level");
 if(s===4){S.form=formOf(S);var dk=R.cur+":"+S.form;if(!R.dex[dk])bn+=30;R.dex[dk]=1;R.coins+=bn;say("진화했어요! "+FORM[S.form].l+" "+FORM[S.form].i+" +"+bn+"🪙");fx("🌟")}
 else{R.coins+=bn;say((was===0?"부화했어요! 🐣":"쑥쑥 자랐어요! 🎉")+" +"+bn+"🪙");fx(was===0?"🐣":"🎉")}}
 if((n-S.born)/86400000>=LIFE){S.dead=true;S.old=true;S.sleeping=false;S.naughty=false;S.call=null;say("편안히 하늘나라로 떠났어요 🕊️")}
@@ -295,17 +295,19 @@ function buy(k){var it=ITEMS[k];if(R.inv[k])return;if(R.coins<it.p){shopDraw();s
 R.coins-=it.p;R.inv[k]=1;S.eq[it.slot]=k;sfx("buy");save();render();shopDraw();smsg(it.n+" 구매 완료! "+(it.slot=="bed"?"방에 놓았어요":"바로 입혀 줬어요"))}
 function equip(k){var s=ITEMS[k].slot;S.eq[s]=S.eq[s]===k?null:k;sfx("equip");save();render();shopDraw()}
 var lastScene="";
-var WXS="clear",WXT=null,WXOK=false,wxDemo=-1,WXLIST=["clear","cloud","fog","rain","snow","storm"],WXN={clear:"맑음",cloud:"흐림",fog:"안개",rain:"비",snow:"눈",storm:"천둥번개"},WXE={clear:"☀️",cloud:"☁️",fog:"🌫️",rain:"🌧️",snow:"❄️",storm:"⛈️"};
+var WXS="clear",WXT=null,WXOK=false,WXGPS=false,WXLAST=0,wxDemo=-1,WXLIST=["clear","cloud","fog","rain","snow","storm"],WXN={clear:"맑음",cloud:"흐림",fog:"안개",rain:"비",snow:"눈",storm:"천둥번개"},WXE={clear:"☀️",cloud:"☁️",fog:"🌫️",rain:"🌧️",snow:"❄️",storm:"⛈️"};
 try{var wc0=JSON.parse(localStorage.getItem("mongi-wx"));if(wc0&&Date.now()-wc0.t<108e5&&WXN[wc0.w]){WXS=wc0.w;WXT=wc0.tp;WXOK=true}}catch(e){}
 function wxe(){return wxDemo>=0?WXLIST[wxDemo]:WXS}
 function wxMap(c){return c<=1?"clear":c<=3?"cloud":c<=48?"fog":c<=67?"rain":c<=77?"snow":c<=82?"rain":c<=86?"snow":"storm"}
 function mixc(a,b,t){var A=parseInt(a.slice(1),16),B=parseInt(b.slice(1),16),r=0,i,sh=[16,8,0];for(i=0;i<3;i++){var x=(A>>sh[i])&255,y=(B>>sh[i])&255;r|=Math.round(x+(y-x)*t)<<sh[i]}return"#"+("000000"+r.toString(16)).slice(-6)}
 function wxSky(sk,W){var m=({clear:0,cloud:.45,fog:.55,rain:.65,snow:.5,storm:.8})[W],g=({cloud:"#8d99a6",fog:"#b8c0c8",rain:"#76828e",snow:"#b4c0cf",storm:"#454d59"})[W];if(!m)return sk;return sk.map(function(c){return mixc(c,g,m)})}
-function wxLabel(){var W=wxe();if(!WXOK&&wxDemo<0)return"🌤️ 날씨 확인 중";var n=phase()=="night"&&W=="clear"?"🌙":WXE[W];return n+" "+WXN[W]+(wxDemo<0&&WXT!=null?" · "+WXT+"°":"")+(wxDemo>=0?" (미리보기)":"")}
+function wxLabel(){var W=wxe();if(!WXOK&&wxDemo<0)return"🌤️ 날씨 확인 중";var n=phase()=="night"&&W=="clear"?"🌙":WXE[W];return (WXGPS&&wxDemo<0?"📍":"")+n+" "+WXN[W]+(wxDemo<0&&WXT!=null?" · "+WXT+"°":"")+(wxDemo>=0?" (미리보기)":"")}
 function wxCycle(){wxDemo=wxDemo>=WXLIST.length-1?-1:wxDemo+1;lastScene="";render()}
-function wxPos(cb){var c=null;try{c=JSON.parse(localStorage.getItem("mongi-loc"))}catch(e){}if(c&&Date.now()-c.t<864e5)return cb(c.la,c.lo);var done=false,fin=function(la,lo,sv){if(done)return;done=true;if(sv){try{localStorage.setItem("mongi-loc",JSON.stringify({la:la,lo:lo,t:Date.now()}))}catch(e){}}cb(la,lo)};
-if(navigator.geolocation){try{navigator.geolocation.getCurrentPosition(function(p){fin(p.coords.latitude,p.coords.longitude,true)},function(){fin(37.57,126.98,false)},{timeout:6000,maximumAge:36e5})}catch(e){fin(37.57,126.98,false)}setTimeout(function(){fin(37.57,126.98,false)},7000)}else fin(37.57,126.98,false)}
-function wxFetch(){wxPos(function(la,lo){try{fetch("https://api.open-meteo.com/v1/forecast?latitude="+la.toFixed(2)+"&longitude="+lo.toFixed(2)+"&current=weather_code,temperature_2m").then(function(r){return r.json()}).then(function(j){var c=j.current;if(!c)return;WXS=wxMap(c.weather_code);WXT=Math.round(c.temperature_2m);WXOK=true;try{localStorage.setItem("mongi-wx",JSON.stringify({w:WXS,tp:WXT,t:Date.now()}))}catch(e){}lastScene="";render()}).catch(function(){})}catch(e){}})}
+function wxPos(cb){var last=null;try{last=JSON.parse(localStorage.getItem("mongi-loc"))}catch(e){}
+var done=false,fin=function(la,lo,gps){if(done)return;done=true;WXGPS=gps;if(gps&&arguments[3]){try{localStorage.setItem("mongi-loc",JSON.stringify({la:la,lo:lo,t:Date.now()}))}catch(e){}}cb(la,lo)};
+var fb=function(){if(last)fin(last.la,last.lo,true);else fin(37.57,126.98,false)};
+if(navigator.geolocation){try{navigator.geolocation.getCurrentPosition(function(p){fin(p.coords.latitude,p.coords.longitude,true,true)},fb,{timeout:8000,maximumAge:600000})}catch(e){fb()}setTimeout(fb,9500)}else fb()}
+function wxFetch(){wxPos(function(la,lo){try{fetch("https://api.open-meteo.com/v1/forecast?latitude="+la.toFixed(2)+"&longitude="+lo.toFixed(2)+"&current=weather_code,temperature_2m").then(function(r){return r.json()}).then(function(j){var c=j.current;if(!c)return;WXS=wxMap(c.weather_code);WXT=Math.round(c.temperature_2m);WXOK=true;WXLAST=Date.now();try{localStorage.setItem("mongi-wx",JSON.stringify({w:WXS,tp:WXT,t:Date.now()}))}catch(e){}lastScene="";render()}).catch(function(){})}catch(e){}})}
 function phase(){var d=new Date(),h=d.getHours()+d.getMinutes()/60;return h>=7&&h<17?"day":h>=5&&h<7?"dawn":h>=17&&h<19?"sunset":h>=19&&h<22?"evening":"night"}
 var SKY={day:["#7fcdf5","#d6f1ff"],dawn:["#ffa79a","#ffe6bf"],sunset:["#ff8a5c","#ffd699"],evening:["#3b3f86","#b8739c"],night:["#0f1a3d","#2a3a6b"]};
 var TINT={day:"",dawn:"rgba(255,170,150,.12)",sunset:"rgba(255,120,60,.14)",evening:"rgba(40,20,90,.28)",night:"rgba(8,16,60,.45)"};
@@ -492,10 +494,10 @@ load();
 var ni=document.getElementById("name");ni.value=S.name;ni.onchange=function(){S.name=ni.value.trim()||cs().n;ni.value=S.name;save();render()};
 var pk=document.getElementById("pick");
 Object.keys(SPC).forEach(function(k){var b=document.createElement("button");b.className="chip";b.dataset.k=k;b.innerHTML="<b>"+SPC[k].e+"</b>"+SPC[k].l;b.onclick=function(){choose(k)};pk.appendChild(b)});
-var VER="1.0.0";
+var VER="1.2.0";
 document.getElementById("ver").textContent="버전 "+VER;
 setTimeout(function(){var e=document.getElementById("splash");e.classList.add("out");setTimeout(function(){e.remove()},600)},3000);
-tick();setInterval(tick,2000);setInterval(wander,4500);wxFetch();setInterval(wxFetch,1800000);
+tick();setInterval(tick,2000);setInterval(wander,4500);wxFetch();setInterval(wxFetch,1800000);document.addEventListener("visibilitychange",function(){if(!document.hidden&&Date.now()-WXLAST>600000)wxFetch()});
 var db=daily();
 if(R.gift){R.gift=false;save();render();say("선물로 100🪙과 반다나를 드려요 🎁")}
 else if(db){save();render();say("출석 "+R.streak+"일째! +"+db+"🪙");fx("+"+db+"🪙")}
