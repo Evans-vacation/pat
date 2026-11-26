@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko"><head><meta charset="utf-8">
+<html lang="ko"><head><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#ff9f43"><link rel="apple-touch-icon" href="icon-192.png"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>내 펫 키우기</title>
 <style>
@@ -591,6 +591,7 @@ var ni=document.getElementById("name");ni.value=S.name;ni.onchange=function(){S.
 var pk=document.getElementById("pick");
 Object.keys(SPC).forEach(function(k){var b=document.createElement("button");b.className="chip";b.dataset.k=k;b.innerHTML="<b>"+SPC[k].e+"</b>"+SPC[k].l;b.onclick=function(){choose(k)};pk.appendChild(b)});
 var VER="1.4.0";
+try{if("serviceWorker"in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js")}catch(e){}
 document.getElementById("ver").textContent="버전 "+VER;
 setTimeout(function(){var e=document.getElementById("splash");e.classList.add("out");setTimeout(function(){e.remove()},600)},3000);
 tick();setInterval(tick,2000);setInterval(wander,4500);wxFetch();setInterval(wxFetch,1800000);document.addEventListener("visibilitychange",function(){if(!document.hidden&&Date.now()-WXLAST>600000)wxFetch()});
